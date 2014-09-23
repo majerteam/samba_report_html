@@ -3,6 +3,8 @@ samba_report_html
 
 HTML+js frontend for samba_report_module
 
+See https://github.com/majerteam/samba_report_module
+
 Also copied here :
 
 * gauge.js:
