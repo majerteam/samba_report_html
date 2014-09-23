@@ -1,0 +1,57 @@
+a#refresh, a#toolshow{
+    right: 10px;
+}
+a#toolshow{
+    display: none;
+}
+a#toolhide {
+    right: 90px;
+}
+a#toolshow, a#toolhide{
+    font-size: 64px;
+    font-weight: bold;
+    line-height: 64px;
+    width: 64px;
+    color: #000;
+    text-align: center;
+    border-radius: 10px;
+    border: outset 3px black;
+}
+a.tool {
+    position: fixed;
+    text-decoration: none;
+    position: fixed;
+    top: 20px;
+}
+div.filterborder {
+    position: fixed;
+    top: 100px;
+    right: 10px;
+    background: white;
+    border: grey outset 3px;
+    white-space: normal;
+}
+div.filterborder h3, div.filterborder h4 {
+    text-align: center;
+}
+div.filteravailable, div.filterenabled {
+    background: white;
+    border: grey inset 3px;
+    margin: 20px;
+    padding: 3px;
+    width: 200px;
+    line-height: 2;
+}
+span.filter {
+    border-radius: 3px;
+    background: #9f9;
+    margin: 3px;
+    padding: 3px;
+}
+span.filter:hover {
+    border: dashed black 1px;
+}
+div.filterborder a {
+    text-decoration: none;
+}
+

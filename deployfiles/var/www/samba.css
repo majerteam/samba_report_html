@@ -1,0 +1,136 @@
+body, table.sharestable{
+    background: #eef;
+}
+body {
+    padding: 0px;
+    margin: 0px;
+}
+h2 *{
+    vertical-align: middle;
+}
+tr.titlerow {
+    background: #ddf;
+    border-bottom: solid #2bb4e0 3px;
+}
+table.sharestable td {
+    height: 20px;
+}
+table.sharestable {
+    border-collapse: collapse;
+    border: solid #2bb4e0 4px;
+}
+div#explainclose, table.sharestable {
+    padding: 5px;
+}
+div.userlist {
+    /* position set in js: see center() */
+    white-space: nowrap;
+    display: none;
+    overflow: auto;
+    background: #f0f0f0;
+    border: outset grey 4px;
+    padding: 1em;
+    box-shadow: 3px 3px grey, 1em 1em 0.4em olive;
+    z-index: 3;
+    max-height: 70%;
+}
+div.locks td {
+   font-size: small;
+}
+tr.selected td.userscell, tr.selected td.sharecell{
+    font-weight: bold;
+    font-style: italic;
+}
+tr.selected {
+    background: #efe;
+}
+div.server {
+    overflow: hidden;
+    border: outset grey 2px;
+    margin: 1em;
+    background: #d4d4f7;
+    padding: 1em;
+    box-shadow: 3px 3px #444, 1em 1em 0.4em grey;
+}
+span.explanation {
+    font-style: italic;
+    white-space: normal;
+}
+div.server, div.userlist, div#explainclose {
+    -moz-border-radius: 15px;
+    border-radius: 15px;
+}
+span.close {
+    border: solid black 1px;
+    left: 5px;
+}
+col.col1 {
+	width: 200px;
+}
+col.col2 {
+	width: 300px;
+}
+div.userlist.locks {
+    background: #f4f4f4;
+    }
+div.userlist.locks table {
+    overflow: scroll;
+    max-height: 100%;
+    max-width: fill-available;
+    }
+table.sharestable tr.sharerow:hover, div.userlist tr:hover {
+    background: #ddf;
+    border-bottom: solid gray 1px;
+    border-top: solid gray 1px;
+}
+table.sharestable td.highlighted {
+    background-color: #ddf;
+    border-left: solid gray 1px;
+    border-right: solid gray 1px;
+}
+table.sharestable tr.sharerow:hover td.highlighted:hover {
+    background: #ccf;
+}
+table.sharestable tr td a.mainlink {
+    display:block;
+    height:100%;
+    width:100%;
+    text-decoration: none;
+    color: black;
+}
+div#overall {
+    background: #222;
+    opacity:0.8;
+    position: fixed;
+    padding:0;
+    margin:0;
+    width: 100%;
+    height: 110%;
+    z-index: 2;
+    display: none;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    right: 0px;
+}
+div#close {
+    right: 100px;
+    top: 0px;
+    font-size: 100px;
+    color: #000;
+    font-weight: bold;
+    display: none;
+    z-index: 5;
+    position: fixed;
+}
+div#explainclose {
+    position: fixed;
+    top: 10px;
+    display: none;
+    z-index: 4;
+    background: #999;
+    font-weight: bold;
+}
+.gauge {
+    margin: 20px;
+}
