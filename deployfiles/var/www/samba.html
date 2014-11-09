@@ -36,12 +36,21 @@
     <h1>Utilisation des serveurs samba</h1>
     <div id="error" class="autofill"></div>
     <div id="sambacontainer" class="autofill"></div>
-
     <script type="text/javascript" src="jquery.min.js"> </script>
     <script type="text/javascript" src="d3.js"></script>
     <script type="text/javascript" src="gauge.js"></script>
     <script type="text/javascript" src="myhtml.js"> </script>
     <script type="text/javascript" src="filter.js"> </script>
     <script type="text/javascript" src="samba.js"> </script>
+    <script type="text/javascript">
+
+    new Sambascript().start({
+        couchdb: {
+            baseurl: 'testdata/',
+            db_prefix: 'samba-',
+            poll_interval: 6000,
+        }
+    });
+    </script>
   </body>
 </html>

@@ -4,6 +4,210 @@
 // requires filter.js
 // requires myhtml.js
 
+var DataInterface_defaults = {
+    poll_interval: 60000, // 60 seconds
+    latest_doc_suffix: '_all_docs%3Flimit=1&include_docs=true&descending=true', // %3F is for ?
+}
+
+function DataInterface(config) {
+    'use strict';
+    this.baseurl = config.baseurl;
+    this.db_prefix = config.db_prefix;
+    if (config.poll_interval != undefined) {
+        this.poll_interval = config.poll_interval;
+    } else {
+        this.poll_interval = DataInterface_defaults.poll_interval;
+    }
+
+    this.db_servers = {};
+    this.polls = 0;
+
+    this.ajax_json_err = function(xhr, httpstatus, value, context) {
+        console.log("error fetching " + context + ": ");
+        console.log(xhr);
+        console.log(httpstatus);
+        console.log(value);
+    };
+
+    this.discover = function() {
+        var discoverurl = this.baseurl + '_all_dbs';
+
+        console.log("Discovering dbs at " + discoverurl);
+
+        var instance = this;
+        this
+        var db_prefix = this.db_prefix;
+        var db_servers = this.db_servers;
+        var baseurl = this.baseurl;
+
+        $.ajax({
+            dataType: "json",
+            type: 'GET',
+            url: discoverurl,
+            headers:{"Accept": "application/json"},
+            mimeType: "application/json",
+            data: '',
+            })
+        .done(
+            function(data, httpstatus) {
+                var ignored = [];
+                console.log(httpstatus);
+                $.each(data, function(key, database) {
+                    if (database.startsWith(db_prefix)) {
+                        var servername = database.replace(db_prefix, '');
+                        console.log("Data exists for server: " + servername);
+                        if (instance.db_servers[servername] == undefined) {
+                            instance.db_servers[servername] = {
+                                url: baseurl + database,
+                                latest_doc_url: baseurl + database + '/' + DataInterface_defaults.latest_doc_suffix
+                                };
+                        }
+                        $('#sambacontainer').trigger('foundnewserver', [servername]);
+                        console.log('already known: ' + servername);
+                    } else {
+                        ignored.push(database);
+                    }
+                });
+                console.log("Ignored databases (not matching prefix '" + db_prefix + "'): ", ignored);
+                console.log("discovered servers", instance.db_servers);
+                // instance.poll_loop();
+            })
+        .fail(
+            function(xhr, httpstatus, value) {
+                instance.ajax_json_err(xhr, httpstatus, value, 'inventory');
+            }
+        );
+    };
+    this.poll_loop = function() {
+        /*
+         * Increments this.polls
+         * For every known server, updates data
+         * Schedules next call in config.poll_interval
+         */
+        console.log("polling for time: " + ++this.polls);
+        var instance = this;
+        $.each(this.db_servers, function(servername, server) {
+            var latest_doc_url = server.url + '/' + DataInterface_defaults.latest_doc_suffix;
+            console.log('polling for ' + servername + ' at ' + latest_doc_url);
+            $.ajax({
+                dataType: "json",
+                type: 'GET',
+                url: latest_doc_url,
+                headers:{"Accept": "application/json"},
+                mimeType: "application/json",
+                data: '',
+                }).done(function(data, httpstatus) {
+                    console.log(httpstatus);
+                    instance.db_servers[servername][latest_info] = data;
+                }).fail(function(xhr, httpstatus, value) {
+                    instance.ajax_json_err(xhr, httpstatus, value, servername);
+                });
+
+        });
+
+        var instance = this;
+        // re arm timeout
+        window.setTimeout(
+            function() {
+                // workaround so that this represents current this and not the
+                // global object (window)
+                instance.poll_loop.apply(instance);
+            },
+            this.poll_interval
+        );
+    };
+    this.poll_server = function(servername) {
+        var server = this.db_servers[servername];
+        var instance = this;
+        console.log('polling for ' + servername + ' at ' + latest_doc_url);
+        $.ajax({
+            dataType: "json",
+            type: 'GET',
+            url: server.latest_doc_url,
+            headers:{"Accept": "application/json"},
+            mimeType: "application/json",
+            data: '',
+            }).done(function(data, httpstatus) {
+                console.log(httpstatus);
+                instance.db_servers[servername]['latest_info'] = data;
+                $('#sambacontainer div.' + servername).trigger('dataupdated', data);
+
+            }).fail(function(xhr, httpstatus, value) {
+                instance.ajax_json_err(xhr, httpstatus, value, servername);
+                $('#sambacontainer div.' + servername).trigger('dataupdate_error', value);
+            });
+    }
+    console.log("couchdb interface up");
+}
+
+function DrawingMachine(data) {
+    'use strict';
+    this.data = data;
+    $('#sambacontainer').bind('foundnewserver', function(event, servername){
+        var local_refresher = $(document.createElement("img"))
+                        .attr('src', 'refresh.png')
+                        .attr('height', "32")
+                        .css('vertical-align', 'middle')
+                        .css('float', 'right');
+        var server_container = $(document.createElement("div"))
+            .addClass('server')
+            .addClass(servername)
+            .bind('dataupdated', function(theevent, data){
+                $('#sambacontainer div.' + servername + ' div.placeholder').remove();
+                $('#sambacontainer div.' + servername + ' div.errormessage').remove();
+            })
+            .bind('dataupdate_error', function(theevent, errorinfo, uri){
+                console.log('errorinfo', errorinfo);
+                $('#sambacontainer div.' + servername + ' div.errormessage').remove();
+                $('#sambacontainer div.' + servername).append(
+                    $(document.createElement("div"))
+                    .addClass('errormessage')
+                    .text(errorinfo.message)
+                );
+            })
+
+            .append(
+                $(document.createElement("h3"))
+                .append(
+                    $(document.createElement("img"))
+                    .attr('src', 'server.png')
+                    .attr('height', "64")
+                    .css('vertical-align', 'middle')
+                    )
+                .append(
+                    $(document.createElement("div"))
+                    .text(servername)
+                    )
+                .append(
+                    $(document.createElement("a"))
+                    .attr('href', data.db_servers[servername].url)
+                    .text('database url')
+                    .css('font-size', 'x-small')
+                )
+                .append(' ')
+                .append(
+                    $(document.createElement("a"))
+                    .attr('href', data.db_servers[servername].latest_doc_url)
+                    .text('latest doc in db')
+                    .css('font-size', 'x-small')
+                )
+                .append(local_refresher)
+        )
+        .append(
+            $(document.createElement("div"))
+            .addClass('placeholder')
+            .text('En attente de données')
+        );
+
+        $('#sambacontainer').append(server_container);
+        local_refresher.bind('click', function(event){
+            console.log('please refresh '  + servername);
+            data.poll_server(servername);
+        });
+    });
+    console.log("drawing machine up");
+}
+
 var SambaLib = {
   selectors: {
     target: "div#sambacontainer",
@@ -19,16 +223,18 @@ var SambaLib = {
     $(window).scrollLeft()) + "px");
     return this;
   },
-  start: function() {
+  start: function(config) {
     if (this.jqpatched) {
       console.log("Sambascript already installed");
     } else {
       jQuery.fn.center = SambaLib.jq_center;
       this.jqpatched = true;
     }
-    this.reset();
-    FilterLib.register_refresh(this.refresh);
-    FilterLib.refresh();
+    this.data = new DataInterface(config.couchdb);
+    this.drawing_machine = new DrawingMachine(this.data);
+    this.data.discover();
+    // FilterLib.register_refresh(this.refresh);
+    // FilterLib.refresh();
     console.log("installed Sambascript");
     return this;
   },
@@ -265,7 +471,7 @@ var SambaLib = {
     }
   },
   showspace: function(server, uniqueindex) {
-    /* this is d3.js, not jquery, so we run this after 
+    /* this is d3.js, not jquery, so we run this after
        everything has been appended to the DOM
     */
     if (server.container == undefined) {
@@ -290,7 +496,7 @@ var SambaLib = {
       	htmlnode("span")
 	.attr('id', elt_id)
 	.addClass('gauge')
-	.attr('title', 
+	.attr('title',
 		totalGb.toFixed(2) + 'Go dont ' + usedGb.toFixed(2)
 		+ 'Go utilisés et ' + availableGb.toFixed(2) + 'Go disponibles'
 		)
@@ -455,4 +661,3 @@ function Sambascript () {
 };
 
 SambaLib.bindall();
-new Sambascript().start();
