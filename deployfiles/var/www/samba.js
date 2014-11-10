@@ -7,7 +7,7 @@
 var MH = new MyHTML();
 
 var DataInterface_defaults = {
-    poll_interval: 60000, // 60 seconds
+    poll_interval: 600000, // 5 minutes
     latest_doc_suffix: '_all_docs%3Flimit=1&include_docs=true&descending=true', // %3F is for ?
 }
 
@@ -15,6 +15,7 @@ function DataInterface(config) {
     'use strict';
     this.baseurl = config.baseurl;
     this.db_prefix = config.db_prefix;
+    this.discover_done = false;
     if (config.poll_interval != undefined) {
         this.poll_interval = config.poll_interval;
     } else {
@@ -72,7 +73,7 @@ function DataInterface(config) {
                 });
                 console.log("Ignored databases (not matching prefix '" + db_prefix + "'): ", ignored);
                 console.log("discovered servers", instance.db_servers);
-                // instance.poll_loop();
+                this.discover_done = true;
             })
         .fail(
             function(xhr, httpstatus, value) {
@@ -86,40 +87,36 @@ function DataInterface(config) {
          * For every known server, updates data
          * Schedules next call in config.poll_interval
          */
+        if (! this.discover_done) {
+            this.schedule_poll(1000);
+        }
         console.log("polling for time: " + ++this.polls);
         var instance = this;
         $.each(this.db_servers, function(servername, server) {
-            var latest_doc_url = server.url + '/' + DataInterface_defaults.latest_doc_suffix;
-            console.log('polling for ' + servername + ' at ' + latest_doc_url);
-            $.ajax({
-                dataType: "json",
-                type: 'GET',
-                url: latest_doc_url,
-                headers:{"Accept": "application/json"},
-                mimeType: "application/json",
-                data: '',
-                }).done(function(data, httpstatus) {
-                    console.log(httpstatus);
-                    instance.db_servers[servername][latest_info] = data;
-                }).fail(function(xhr, httpstatus, value) {
-                    instance.ajax_json_err(xhr, httpstatus, value, servername);
-                });
-
+            instance.poll_server(servername, server);
         });
 
-        var instance = this;
         // re arm timeout
+        this.schedule_poll(this.poll_interval);
+    };
+    this.schedule_poll = function(next_time) {
+        var instance = this;
         window.setTimeout(
             function() {
                 // workaround so that this represents current this and not the
                 // global object (window)
                 instance.poll_loop.apply(instance);
             },
-            this.poll_interval
+            next_time
         );
     };
-    this.poll_server = function(servername) {
-        var server = this.db_servers[servername];
+    this.poll_server = function(servername, server) {
+        /*
+         * server can be undefined
+         */
+        if (server == undefined) {
+            server = this.db_servers[servername];
+        }
         var instance = this;
         console.log('polling for ' + servername + ' at ' + server.latest_doc_url);
         $.ajax({
@@ -142,6 +139,7 @@ function DataInterface(config) {
                 $('#sambacontainer div.' + servername).trigger('dataupdate_error', value);
             });
     }
+    this.poll_loop();
     console.log("couchdb interface up");
 }
 
@@ -231,7 +229,8 @@ function DrawingMachine(data) {
     };
     this.drawserver = function(servername) {
         var lastupdated_span = MH.htmlnode('span')
-            .addClass('server.timestamp.' + servername);
+            .addClass('server.timestamp.' + servername)
+            .text('…');
         instance.htmlitems.timestamps[servername] = lastupdated_span;
         var server_container = MH.htmlnode("div")
             .addClass('server')
