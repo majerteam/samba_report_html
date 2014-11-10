@@ -92,3 +92,8 @@ Why this project
 -----------------
 
 For a start, I needed to have a centralized view of samba usage, because it is critical to avoid disconnecting people when they work on locked files: this could void days of work.
+
+Images
+------
+
+Images : specific (c), I took them in oxygen : http://www.oxygen-icons.org/

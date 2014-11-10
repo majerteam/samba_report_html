@@ -163,7 +163,7 @@ function DrawingMachine(data) {
     }
     this.debuglinks = function(servername) {
         var local_refresher = MH.anamenode(
-            'Forcer mise à jour',
+            '#',
                 MH.imgnode('refresh.png', 'Forcer mise à jour', "32")
                 .css('vertical-align', 'middle')
                 .bind('click', function(event){
