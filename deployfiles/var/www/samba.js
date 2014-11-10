@@ -4,6 +4,8 @@
 // requires filter.js
 // requires myhtml.js
 
+var MH = new MyHTML();
+
 var DataInterface_defaults = {
     poll_interval: 60000, // 60 seconds
     latest_doc_suffix: '_all_docs%3Flimit=1&include_docs=true&descending=true', // %3F is for ?
@@ -119,7 +121,7 @@ function DataInterface(config) {
     this.poll_server = function(servername) {
         var server = this.db_servers[servername];
         var instance = this;
-        console.log('polling for ' + servername + ' at ' + latest_doc_url);
+        console.log('polling for ' + servername + ' at ' + server.latest_doc_url);
         $.ajax({
             dataType: "json",
             type: 'GET',
@@ -142,70 +144,109 @@ function DataInterface(config) {
 
 function DrawingMachine(data) {
     'use strict';
+    // DataInterface
     this.data = data;
+    // servername -> object
+    this.htmlitems = {};
+    var instance = this;
     $('#sambacontainer').bind('foundnewserver', function(event, servername){
-        var local_refresher = $(document.createElement("img"))
-                        .attr('src', 'refresh.png')
-                        .attr('height', "32")
-                        .css('vertical-align', 'middle')
-                        .css('float', 'right');
-        var server_container = $(document.createElement("div"))
-            .addClass('server')
-            .addClass(servername)
-            .bind('dataupdated', function(theevent, data){
-                $('#sambacontainer div.' + servername + ' div.placeholder').remove();
-                $('#sambacontainer div.' + servername + ' div.errormessage').remove();
-            })
-            .bind('dataupdate_error', function(theevent, errorinfo, uri){
-                console.log('errorinfo', errorinfo);
-                $('#sambacontainer div.' + servername + ' div.errormessage').remove();
-                $('#sambacontainer div.' + servername).append(
-                    $(document.createElement("div"))
-                    .addClass('errormessage')
-                    .text(errorinfo.message)
-                );
-            })
+        instance.drawserver(servername);
+    });
+    console.log("drawing machine up");
 
+    /*
+     * DrawingMachine.functions
+     */
+
+    this.getselector = function(servername) {
+        return '#sambacontainer div.' + servername;
+    }
+    this.debuglinks = function(servername) {
+        var local_refresher = MH.anamenode(
+            'Forcer mise à jour',
+                MH.imgnode('refresh.png', 'Forcer mise à jour', "32")
+                .css('vertical-align', 'middle')
+                .bind('click', function(event){
+                    console.log('please refresh '  + servername);
+                    data.poll_server(servername);
+                })
+        );
+
+        var node = MH.htmlnode("span")
+            .addClass('debuglinks')
             .append(
-                $(document.createElement("h3"))
+                MH.anamenode(servername + '-debug', ' ')
+                .bind('click', function() {
+                    $(instance.getselector(servername) + ' span.debuglinks span.content')
+                    .toggle();
+                    }
+                )
                 .append(
-                    $(document.createElement("img"))
-                    .attr('src', 'server.png')
-                    .attr('height', "64")
+                    MH.imgnode('face-smile-gearhead-male.png', 'Info de debug')
                     .css('vertical-align', 'middle')
-                    )
+                )
+            )
+            .append(
+                MH.htmlnode('span')
+                .addClass('content')
+                .addClass('hidden')
                 .append(
-                    $(document.createElement("div"))
-                    .text(servername)
-                    )
-                .append(
-                    $(document.createElement("a"))
-                    .attr('href', data.db_servers[servername].url)
+                    MH.atonode(data.db_servers[servername].url)
                     .text('database url')
                     .css('font-size', 'x-small')
                 )
                 .append(' ')
                 .append(
-                    $(document.createElement("a"))
-                    .attr('href', data.db_servers[servername].latest_doc_url)
+                    MH.atonode(data.db_servers[servername].latest_doc_url)
                     .text('latest doc in db')
                     .css('font-size', 'x-small')
                 )
+                .append(' ')
                 .append(local_refresher)
-        )
+            )
+        return node;
+    };
+    this.drawserver = function(servername) {
+        var server_container = MH.htmlnode("div")
+            .addClass('server')
+            .addClass(servername)
+            .bind('dataupdated', function(theevent, data){
+                $(instance.getselector(servername) + ' div.lastupdate').text('Dernière mise à jour: ' + new Date().toLocaleString());
+                $(instance.getselector(servername) + ' div.errormessage').hide();
+            })
+            .bind('dataupdate_error', function(theevent, errorinfo, uri){
+                console.log('errorinfo', errorinfo);
+                $(instance.getselector(servername) + ' div.errormessage').text(errorinfo.message).show();
+            })
+            .append(
+                MH.htmlnode("h3")
+                .append(
+                    MH.htmlnode("div")
+                    .append(
+                        MH.anamenode(
+                            servername,
+                            MH.imgnode('server.png', servername, "32")
+                                .css('vertical-align', 'middle')
+                        )
+                        .append(servername)
+                    )
+                    .append(' ')
+                    .append(instance.debuglinks(servername))
+                )
+            )
         .append(
             $(document.createElement("div"))
-            .addClass('placeholder')
+            .addClass('lastupdate')
             .text('En attente de données')
+        )
+        .append(
+                MH.htmlnode("div")
+                .addClass('errormessage')
+                .hide()
         );
 
         $('#sambacontainer').append(server_container);
-        local_refresher.bind('click', function(event){
-            console.log('please refresh '  + servername);
-            data.poll_server(servername);
-        });
-    });
-    console.log("drawing machine up");
+    };
 }
 
 var SambaLib = {
@@ -283,7 +324,7 @@ var SambaLib = {
         }
         newlist = $(document.createElement("ul"));
         $.each(main_object.machine2shares[data.machine], function(index, thismachine_share){
-          subitem = htmlnode('li')
+          subitem = MH.htmlnode('li')
             .text(thismachine_share)
             .appendTo(newlist);
         });
@@ -336,7 +377,7 @@ var SambaLib = {
       } else {
         rw = "r";
       }
-      row = htmlnode('tr')
+      row = MH.htmlnode('tr')
         .append(SambaLib.mkcell(data.denyMode))
         .append(SambaLib.mkcell(rw))
         .append(SambaLib.mkcell(new Date(data.date).toLocaleString()))
@@ -347,13 +388,13 @@ var SambaLib = {
   },
   detailsdiv: function(shortname, explanationtxt, mainitem) {
     var sharedetaildiv, sharenamebis;
-    sharenamebis = htmlnode('h3')
+    sharenamebis = MH.htmlnode('h3')
       .text(shortname, shortname);
-    sharedetaildiv = htmlnode('div')
+    sharedetaildiv = MH.htmlnode('div')
       .addClass("userlist")
       .append(sharenamebis)
       .append(mainitem);
-    explanation = htmlnode('span')
+    explanation = MH.htmlnode('span')
       .addClass("explanation")
       .text(explanationtxt)
       .appendTo(sharedetaildiv);
@@ -478,12 +519,12 @@ var SambaLib = {
     	return server;
     }
     console.log("gauge for server " + server.name);
-    var container = htmlnode("span").attr('id', server.name + '_diskspace');
+    var container = MH.htmlnode("span").attr('id', server.name + '_diskspace');
     server.datadiv.append(container);
 
-    var mountlist = htmlnode('ul');
+    var mountlist = MH.htmlnode('ul');
     $.each(server.data.avail_space.mount_points, function(directory, mountpoint){
-      mountlist.append(htmlnode('li').text(directory + ' monté en ' + mountpoint));
+      mountlist.append(MH.htmlnode('li').text(directory + ' monté en ' + mountpoint));
     });
     server.datadiv.before(mountlist);
     $.each(server.data.avail_space.disk_usage, function(mountpoint, data){
@@ -493,7 +534,7 @@ var SambaLib = {
       var usedGb = data.used / 1048576;
       var availableGb = data.available / 1048576;
       container.append(
-      	htmlnode("span")
+      	MH.htmlnode("span")
 	.attr('id', elt_id)
 	.addClass('gauge')
 	.attr('title',
@@ -544,8 +585,8 @@ var SambaLib = {
               .text(server.name)
             )
       );
-      server.datadiv = htmlnode('div');
-      sharespan = htmlnode('span').css('float', 'left');
+      server.datadiv = MH.htmlnode('div');
+      sharespan = MH.htmlnode('span').css('float', 'left');
       sharespan.append(SambaLib.showshares.apply(SambaLib.app, [server]));
       server.datadiv.append(sharespan);
       server.container.append(server.datadiv);

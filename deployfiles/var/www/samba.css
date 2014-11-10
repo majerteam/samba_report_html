@@ -134,3 +134,20 @@ div#explainclose {
 .gauge {
     margin: 20px;
 }
+.localanchor {
+    text-decoration: none;
+    opacity: 0.3;
+}
+.localanchor:hover {
+    opacity: 1;
+}
+.hidden {
+    display: none;
+}
+div.errormessage {
+    border: solid red 1px;
+    background-color: #ffcccc;
+}
+span.debuglinks span.content {
+    background-color: #d0d0d0;
+}
