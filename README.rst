@@ -43,6 +43,18 @@ Files that are copied here, mainly for convenience.
 
 Thanks a lots to all imported authors!
 
+* moment.js:
+
+    MIT Licence, https://github.com/moment/moment/
+
+* jquery: MIT, https://jquery.org/license/
+
+
+Images
+.......
+
+I took them in oxygen : http://www.oxygen-icons.org/
+
 Screenshots!
 ------------
 
@@ -92,8 +104,3 @@ Why this project
 -----------------
 
 For a start, I needed to have a centralized view of samba usage, because it is critical to avoid disconnecting people when they work on locked files: this could void days of work.
-
-Images
-------
-
-Images : specific (c), I took them in oxygen : http://www.oxygen-icons.org/

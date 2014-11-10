@@ -131,10 +131,13 @@ function DataInterface(config) {
             data: '',
             }).done(function(data, httpstatus) {
                 console.log(httpstatus);
-                instance.db_servers[servername]['latest_info'] = data;
+                instance.db_servers[servername].in_error = false;
+                instance.db_servers[servername].latest_info = data;
+                instance.db_servers[servername].last_fetch = moment();
                 $('#sambacontainer div.' + servername).trigger('dataupdated', data);
 
             }).fail(function(xhr, httpstatus, value) {
+                instance.db_servers[servername].in_error = true;
                 instance.ajax_json_err(xhr, httpstatus, value, servername);
                 $('#sambacontainer div.' + servername).trigger('dataupdate_error', value);
             });
@@ -147,11 +150,15 @@ function DrawingMachine(data) {
     // DataInterface
     this.data = data;
     // servername -> object
-    this.htmlitems = {};
+    this.htmlitems = {
+        timestamps: {},
+    };
     var instance = this;
     $('#sambacontainer').bind('foundnewserver', function(event, servername){
         instance.drawserver(servername);
     });
+
+
     console.log("drawing machine up");
 
     /*
@@ -206,12 +213,35 @@ function DrawingMachine(data) {
             )
         return node;
     };
+    this.updatetimes = function() {
+        console.log("updatetimes");
+        $.each(instance.htmlitems.timestamps, function(servername, container){
+            var serverinfo = instance.data.db_servers[servername];
+            if (serverinfo.in_error == false) {
+                var date = instance.data.db_servers[servername].last_fetch;
+                container.text(date.fromNow());
+            }
+        });
+        window.setTimeout(
+            function() {
+                instance.updatetimes.apply(instance);
+            },
+            5000
+        );
+    };
     this.drawserver = function(servername) {
+        var lastupdated_span = MH.htmlnode('span')
+            .addClass('server.timestamp.' + servername);
+        instance.htmlitems.timestamps[servername] = lastupdated_span;
         var server_container = MH.htmlnode("div")
             .addClass('server')
             .addClass(servername)
             .bind('dataupdated', function(theevent, data){
-                $(instance.getselector(servername) + ' div.lastupdate').text('Dernière mise à jour: ' + new Date().toLocaleString());
+                $(instance.getselector(servername) + ' div.lastupdate')
+                .text(
+                    'Dernière mise à jour: '
+                )
+                .append(lastupdated_span);
                 $(instance.getselector(servername) + ' div.errormessage').hide();
             })
             .bind('dataupdate_error', function(theevent, errorinfo, uri){
@@ -247,6 +277,8 @@ function DrawingMachine(data) {
 
         $('#sambacontainer').append(server_container);
     };
+
+    this.updatetimes();
 }
 
 var SambaLib = {
